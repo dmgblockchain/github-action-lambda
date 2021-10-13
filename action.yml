@@ -1,0 +1,15 @@
+name: 'Container Action Template'
+description: 'Get started with Container actions'
+author: 'GitHub'
+inputs: 
+  myInput:
+    description: 'Input to use'
+    default: 'world'
+outputs:
+  AWS_ACCOUNT_ID: # id of output
+    description: 'AWS_ACCOUNT_ID'
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  args:
+    - ${{ inputs.myInput }}
