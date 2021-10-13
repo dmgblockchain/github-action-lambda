@@ -1,0 +1,35 @@
+name: 'Deploy lambda function'
+description: 'Create and/or update lambda function'
+author: 'MrAtheist'
+inputs:
+  aws_region:
+    description: 'AWS REGION'
+  node_env:
+    description: 'NODE_ENV'
+  node_app_instance:
+    description: 'NODE_APP_INSTANCE'
+  package_lock_chksum:
+    description: 'Checksum for package-lock.json'
+  repository:
+    description: 'Github repository'
+  src_dir:
+    description: 'Source directory'
+    default: './'
+  src_handler:
+    description: 'Handler of the main function under $src_dir, i.e. "handler.hello"'
+    default: 'handler.hello'
+  zip_include:
+    description: 'A plain text file listing out the files to be zipped, located under $src_dir'
+    default: './'
+  fetch-depth:
+    default: 1
+    required: false
+    description: 'Number of commits to fetch during checkout. 0 indicates all history for all branches and tags.'
+
+outputs:
+  IAM_USER: # id of output
+    description: 'IAM_USER'
+
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
