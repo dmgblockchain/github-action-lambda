@@ -2,8 +2,8 @@ name: 'Deploy lambda function'
 description: 'Create and/or update lambda function'
 author: 'MrAtheist'
 inputs:
-  aws_region:
-    description: 'AWS REGION'
+  app_name:
+    description: 'Lambda function name'
   node_env:
     description: 'NODE_ENV'
   node_app_instance:
@@ -16,8 +16,8 @@ inputs:
     description: 'Source directory'
     default: './'
   src_handler:
-    description: 'Handler of the main function under $src_dir, i.e. "handler.hello"'
-    default: 'handler.hello'
+    description: 'Handler of the main function under $src_dir, i.e. "index.handler"'
+    default: 'index.handler'
   zip_include:
     description: 'A plain text file listing out the files to be zipped, located under $src_dir'
     default: './'
