@@ -1,17 +1,12 @@
 #!/usr/bin/bash -l
 set +e
+# set -x
 
 IAM_USER=$(aws sts get-caller-identity --query "Arn" | sed 's/\"//g')
-echo "::set-output name=IAM_USER::${IAM_USER##*\/}"
-
-# ACCOUNT_KEYS=$(aws secretsmanager get-secret-value --secret-id IAM_KEYS | jq -rc '.SecretString')
-# AWS_ACCESS_KEY_ID=$(echo ${ACCOUNT_KEYS} | jq -rc ".${INPUT_NODE_APP_INSTANCE^^}_AWS_SECRET_KEY_ID")
-# AWS_SECRET_ACCESS_KEY=$(echo ${ACCOUNT_KEYS} | jq -rc ".${INPUT_NODE_APP_INSTANCE^^}_AWS_SECRET_ACCESS_KEY")
 AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query "Account" | sed 's/\"//g')
 AWS_PAGER=""
-NODE_ENV="${INPUT_NODE_ENV}"
+echo "::set-output name=IAM_USER::${IAM_USER##*\/}"
 
-# set -x
 cd ${GITHUB_WORKSPACE}/${INPUT_SRC_DIR}
 
 if [[ -z "${INPUT_APP_NAME}" ]]; then # not found
@@ -27,11 +22,6 @@ zip -9 -Xqyr ${APP_NAME}-layer.zip ./nodejs
 
 # zip code
 zip -9 -Xqyr ${GIT_SHA}.zip -@ < ${INPUT_ZIP_INCLUDE}
-
-# Load config variables
-if [[ ! -f ./config/${NODE_ENV}.json ]]; then
-    CONFIG="default"
-fi
 
 _get_latest_layer () {
     echo $(aws lambda list-layer-versions \
@@ -114,23 +104,33 @@ EOF
         --handler ${INPUT_SRC_HANDLER} \
         --layers $(_get_latest_layer) \
         --role arn:aws:iam::${AWS_ACCOUNT_ID}:role/${APP_NAME} \
-        --memory-size 128 \
-        --runtime 'nodejs14.x' \
-        --timeout 30 \
+        --memory-size $(jq -rc '.memorySize // 128' ./${INPUT_DEPLOY_CONFIG} || echo "128") \
+        --runtime $(jq -rc '.runtime // "nodejs14.x"' ./${INPUT_DEPLOY_CONFIG} || echo "nodejs14.x" ) \
+        --timeout $(jq -rc '.timeout // 30' ./${INPUT_DEPLOY_CONFIG} || echo "30")
         --zip-file fileb://$(pwd)/${GIT_SHA}.zip
 
 else 
+    
+    aws lambda update-function-configuration \
+        --function-name ${APP_NAME} \
+        --environment Variables="{NODE_APP_INSTANCE=${INPUT_NODE_APP_INSTANCE},NODE_ENV=${INPUT_NODE_ENV}}" \
+        --handler ${INPUT_SRC_HANDLER} \
+        --memory-size $(jq -rc '.memorySize // 128' ./${INPUT_DEPLOY_CONFIG} || echo "128") \
+        --runtime $(jq -rc '.runtime // "nodejs14.x"' ./${INPUT_DEPLOY_CONFIG} || echo "nodejs14.x" ) \
+        --timeout $(jq -rc '.timeout // 30' ./${INPUT_DEPLOY_CONFIG} || echo "30")
+    
+    sleep 2
+
     aws lambda update-function-code \
         --function-name ${APP_NAME} \
         --zip-file fileb://$(pwd)/${GIT_SHA}.zip | jq '
-            if .Environment.Variables.INPUT_NODE_ENV? then .Environment.Variables.INPUT_NODE_ENV = "REDACTED" else . end'
+            if .Environment.Variables.NODE_ENV? then .Environment.Variables.NODE_ENV = "REDACTED" else . end'
 
     if [[ ${INPUT_PACKAGE_LOCK_CHKSUM} != ${SAVED_CHKSUM} ]]; then
 
-        set -x
-
         aws lambda update-function-configuration \
             --function-name ${APP_NAME} \
-            --handler ${INPUT_SRC_HANDLER}
+            --layers $(_get_latest_layer)
+
     fi
 fi
