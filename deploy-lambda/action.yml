@@ -5,7 +5,8 @@ inputs:
   app_name:
     description: 'Lambda function name'
   deploy_config:
-    description: 'Lambda config, based from $src_dir, i.e. "src/function-name/config.json"'
+    required: true
+    description: 'Lambda config, based from $src_dir, i.e. "src/projectA/config.json"; must have "zip_include" node to specify the zip content: "zip_include": [index.js, ./src]'
   node_env:
     description: 'NODE_ENV'
   node_app_instance:
@@ -16,12 +17,6 @@ inputs:
     description: 'Github repository'
   src_dir:
     description: 'Source directory'
-    default: './'
-  src_handler:
-    description: 'Handler of the main function under $src_dir, i.e. "index.handler"'
-    default: 'index.handler'
-  zip_include:
-    description: 'A plain text file listing out the files to be zipped, based from $src_dir'
     default: './'
   fetch-depth:
     default: 1

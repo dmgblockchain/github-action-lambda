@@ -15,13 +15,19 @@ else
     APP_NAME="${INPUT_APP_NAME}"
 fi
 
+# Check config file
+if [[ ! -f ./${INPUT_DEPLOY_CONFIG} ]]; then # file not found
+    echo "${INPUT_DEPLOY_CONFIG} not found, please check the file path, exiting..."
+    exit 1
+fi
+
 # zip layer
 mkdir nodejs/
 mv ./node_modules/ ./nodejs/
 zip -9 -Xqyr ${APP_NAME}-layer.zip ./nodejs
 
 # zip code
-zip -9 -Xqyr ${GIT_SHA}.zip -@ < ${INPUT_ZIP_INCLUDE}
+zip -9 -Xqyr ${GIT_SHA}.zip `jq -rc '."zip_include" | join(" ")' $(pwd)/${INPUT_DEPLOY_CONFIG}`
 
 _get_latest_layer () {
     echo $(aws lambda list-layer-versions \
@@ -101,12 +107,12 @@ EOF
     aws lambda create-function \
         --function-name ${APP_NAME} \
         --environment Variables="{NODE_APP_INSTANCE=${INPUT_NODE_APP_INSTANCE},NODE_ENV=${INPUT_NODE_ENV}}" \
-        --handler ${INPUT_SRC_HANDLER} \
+        --handler $(jq -rc '.handler // "index.handler"' ./${INPUT_DEPLOY_CONFIG} || echo "index.handler") \
         --layers $(_get_latest_layer) \
         --role arn:aws:iam::${AWS_ACCOUNT_ID}:role/${APP_NAME} \
         --memory-size $(jq -rc '.memorySize // 128' ./${INPUT_DEPLOY_CONFIG} || echo "128") \
         --runtime $(jq -rc '.runtime // "nodejs14.x"' ./${INPUT_DEPLOY_CONFIG} || echo "nodejs14.x" ) \
-        --timeout $(jq -rc '.timeout // 30' ./${INPUT_DEPLOY_CONFIG} || echo "30")
+        --timeout $(jq -rc '.timeout // 30' ./${INPUT_DEPLOY_CONFIG} || echo "30") \
         --zip-file fileb://$(pwd)/${GIT_SHA}.zip
 
 else 
@@ -114,7 +120,7 @@ else
     aws lambda update-function-configuration \
         --function-name ${APP_NAME} \
         --environment Variables="{NODE_APP_INSTANCE=${INPUT_NODE_APP_INSTANCE},NODE_ENV=${INPUT_NODE_ENV}}" \
-        --handler ${INPUT_SRC_HANDLER} \
+        --handler $(jq -rc '.handler // "index.handler"' ./${INPUT_DEPLOY_CONFIG} || echo "index.handler") \
         --memory-size $(jq -rc '.memorySize // 128' ./${INPUT_DEPLOY_CONFIG} || echo "128") \
         --runtime $(jq -rc '.runtime // "nodejs14.x"' ./${INPUT_DEPLOY_CONFIG} || echo "nodejs14.x" ) \
         --timeout $(jq -rc '.timeout // 30' ./${INPUT_DEPLOY_CONFIG} || echo "30")
