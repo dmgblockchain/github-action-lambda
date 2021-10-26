@@ -15,13 +15,19 @@ else
     APP_NAME="${INPUT_APP_NAME}"
 fi
 
+# Check config file
+if [[ ! -f ./${INPUT_DEPLOY_CONFIG} ]]; then
+    echo "${INPUT_DEPLOY_CONFIG} not found, exiting..."
+    exit 1
+fi
+
 # zip layer
 mkdir nodejs/
 mv ./node_modules/ ./nodejs/
 zip -9 -Xqyr ${APP_NAME}-layer.zip ./nodejs
 
 # zip code
-zip -9 -Xqyr ${GIT_SHA}.zip -@ < ${INPUT_ZIP_INCLUDE}
+zip -9 -Xqyr ${GIT_SHA}.zip `jq -rc '."zip_include" | join(" ")' $(pwd)/${INPUT_DEPLOY_CONFIG}`
 
 _get_latest_layer () {
     echo $(aws lambda list-layer-versions \
