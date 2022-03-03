@@ -16,8 +16,8 @@ inputs:
   repository:
     description: 'Github repository'
   src_dir:
-    description: 'Source directory'
-    default: './'
+    description: 'Lambda source code directory'
+    default: './lambdas'
   fetch-depth:
     default: 1
     required: false
