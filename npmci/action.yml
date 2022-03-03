@@ -35,5 +35,5 @@ runs:
       #   TODO enable 'if' when composite actions support it
       #   if: steps.cache-deps.outputs.cache-hit != 'true'
       run: |
-        cd ${{ inputs.src_dir }} && npm ci
+        cd ${{ inputs.src_dir }}/lambdas && npm ci
       shell: bash
