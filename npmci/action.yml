@@ -28,7 +28,7 @@ runs:
       uses: actions/cache@v2
       with:
           path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          key: ${{ runner.os }}-node-${{ hashFiles('**/lambdas/package-lock.json') }}
 
     - name: Install dependencies
       # install deps only if lockfile has changed
