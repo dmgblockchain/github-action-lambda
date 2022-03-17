@@ -23,7 +23,7 @@ fi
 
 # zip layer
 mkdir nodejs/
-mv ./node_modules/ ./nodejs/
+mv ./lambdas/node_modules/ ./nodejs/
 zip -9 -Xqyr ${APP_NAME}-layer.zip ./nodejs
 
 # zip code
